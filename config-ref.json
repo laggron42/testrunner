@@ -1,0 +1,27 @@
+{
+    "$id": "file://config-ref.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Config file for the test suite contents.",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Name of your program"
+        },
+        "pwd": {
+            "type": "string",
+            "description": "Working directory"
+        },
+        "program": {
+            "type": "string",
+            "description": "Path to your executable"
+        },
+        "args": {
+            "type": "array",
+            "description": "List of command line arguments to append",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}
