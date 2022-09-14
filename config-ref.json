@@ -10,18 +10,99 @@
         },
         "pwd": {
             "type": "string",
-            "description": "Working directory"
+            "description": "Global working directory"
         },
         "program": {
             "type": "string",
-            "description": "Path to your executable"
+            "description": "Global path to your executable"
         },
         "args": {
             "type": "array",
-            "description": "List of command line arguments to append",
+            "description": "Global list of command line arguments to append",
             "items": {
                 "type": "string"
             }
+        }
+    },
+    "patternProperties": {
+        ".*": "#/$defs/test-group"
+    },
+    "$defs": {
+        "test-group": {
+            "type": "object",
+            "properties": {
+                "pwd": {
+                    "type": "string",
+                    "description": "Override working directory"
+                },
+                "program": {
+                    "type": "string",
+                    "description": "Override executable path"
+                },
+                "args": {
+                    "type": "array",
+                    "description": "Override command line arguments",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of this test group"
+                },
+                "out": {
+                    "type": "string",
+                    "description": "Expected stdout content"
+                },
+                "err": {
+                    "type": "string",
+                    "description": "Expected stderr content"
+                },
+                "exit-code": {
+                    "type": "integer",
+                    "description": "Expected exit code"
+                },
+                "tests": {
+                    "type": "array",
+                    "description": "The tests in this group",
+                    "items": {
+                        "type": "#/$defs/test"
+                    }
+                },
+                "groups": {
+                    "type": "object",
+                    "description": "Recursive test groups",
+                    "patternProperties": {
+                        ".*": "#/$defs/test-group"
+                    }
+                }
+            }
+        },
+        "test": {
+            "type": "object",
+            "properties": {
+                "in": {
+                    "type": "string",
+                    "description": "stdin content"
+                },
+                "out": {
+                    "type": "string",
+                    "description": "Override expected stdout content"
+                },
+                "err": {
+                    "type": "string",
+                    "description": "Override expected stderr content"
+                },
+                "exit-code": {
+                    "type": "integer",
+                    "description": "Override expected exit code"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of this test"
+                }
+            },
+            "required": ["in"]
         }
     }
 }
