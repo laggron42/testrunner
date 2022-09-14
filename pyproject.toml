@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "testrunner"
+version = "1.0.0a1"
+description = "Functional test runner"
+authors = ["laggron42 <laggron42@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+rich = "^12.5.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+    line-length = 99
+    target-version = ['py38']
+    include = '\.py$'
+
+[tool.flake8]
+    ignore = "W503,E203"
+    max-line-length = 99
