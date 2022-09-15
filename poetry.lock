@@ -21,6 +21,14 @@ python-versions = ">=3.6"
 plugins = ["importlib-metadata"]
 
 [[package]]
+name = "pyyaml"
+version = "6.0"
+description = "YAML parser and emitter for Python"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "rich"
 version = "12.5.1"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
@@ -38,9 +46,10 @@ jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2839706c1bc74e4ff0dd03bc721b0dc71d398cee772978d324ae876b4e72cac4"
+content-hash = "3ab59187ddd19633c1d69be169f4729d4b2e413f6f61a5621867c906c7cfa933"
 
 [metadata.files]
 commonmark = []
 pygments = []
+pyyaml = []
 rich = []
