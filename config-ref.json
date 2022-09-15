@@ -16,6 +16,10 @@
             "type": "string",
             "description": "Global path to your executable"
         },
+        "teardown": {
+            "type": "string",
+            "description": "Program to execute once tests are done"
+        },
         "args": {
             "type": "array",
             "description": "Global list of command line arguments to append",
@@ -49,6 +53,10 @@
                 "description": {
                     "type": "string",
                     "description": "Description of this test group"
+                },
+                "skip": {
+                    "type": "boolean",
+                    "description": "Skip this entire test group"
                 },
                 "out": {
                     "type": "string",
@@ -100,6 +108,10 @@
                 "description": {
                     "type": "string",
                     "description": "Description of this test"
+                },
+                "skip": {
+                    "type": "boolean",
+                    "description": "Skip this specific test"
                 }
             },
             "required": ["in"]
