@@ -16,9 +16,9 @@ class Test:
     """
     A single test in the suite.
     """
-    stdin: str | None = None
-    stdout: str | None = None
-    stderr: str | None = None
+    stdin: bytes | None = None
+    stdout: bytes | None = None
+    stderr: bytes | None = None
     exit_code: int = 0
     description: str | None = None
     skip: bool = False
