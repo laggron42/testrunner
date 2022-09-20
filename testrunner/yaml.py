@@ -19,7 +19,7 @@ class Test:
     stdin: bytes | None = None
     stdout: bytes | None = None
     stderr: bytes | None = None
-    exit_code: int = 0
+    exit_code: int | None = None
     description: str | None = None
     skip: bool = False
 
