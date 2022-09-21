@@ -17,16 +17,28 @@
             "type": "string",
             "description": "Global path to your executable"
         },
-        "teardown": {
-            "type": "string",
-            "description": "Program to execute once tests are done"
-        },
         "args": {
             "type": "array",
             "description": "Global list of command line arguments to append",
             "items": {
                 "type": "string"
             }
+        },
+        "init": {
+            "type": "string",
+            "description": "Program to run once before running tests"
+        },
+        "teardown": {
+            "type": "string",
+            "description": "Program to execute once tests are done"
+        },
+        "group-timeout": {
+            "type": "integer",
+            "description": "Global timeout in seconds for this group test."
+        },
+        "test-timeout": {
+            "type": "integer",
+            "description": "Global timeout in seconds for single tests."
         }
     },
     "required": ["name", "program"],
@@ -51,6 +63,22 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "init": {
+                    "type": "string",
+                    "description": "Program to run once before running tests in this group"
+                },
+                "teardown": {
+                    "type": "string",
+                    "description": "Program to execute once tests in this group are done"
+                },
+                "group-timeout": {
+                    "type": "integer",
+                    "description": "Global timeout in seconds for this group test."
+                },
+                "test-timeout": {
+                    "type": "integer",
+                    "description": "Global timeout in seconds for single tests."
                 },
                 "description": {
                     "type": "string",
@@ -112,6 +140,10 @@
                 "description": {
                     "type": "string",
                     "description": "Description of this test"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Override timeout in seconds for this test."
                 },
                 "skip": {
                     "type": "boolean",
