@@ -39,12 +39,18 @@
         "test-timeout": {
             "type": "integer",
             "description": "Global timeout in seconds for single tests."
+        },
+        "groups": {
+            "type": "object",
+            "description": "Groups of tests to run",
+            "patternProperties": {
+                ".*": {
+                    "$ref": "#/$defs/test-group"
+                }
+            }
         }
     },
-    "required": ["name", "program"],
-    "patternProperties": {
-        ".*": "#/$defs/test-group"
-    },
+    "required": ["name", "program", "groups"],
     "$defs": {
         "test-group": {
             "type": "object",
@@ -104,7 +110,7 @@
                     "type": "array",
                     "description": "The tests in this group",
                     "items": {
-                        "type": "#/$defs/test"
+                        "$ref": "#/$defs/test"
                     }
                 },
                 "groups": {
@@ -149,8 +155,7 @@
                     "type": "boolean",
                     "description": "Skip this specific test"
                 }
-            },
-            "required": ["in"]
+            }
         }
     }
 }
