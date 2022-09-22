@@ -12,34 +12,57 @@ log = logging.getLogger("testrunner.yaml")
 
 
 @dataclass(kw_only=True)
-class Test:
-    """
-    A single test in the suite.
-    """
-    stdin: bytes | None = None
-    stdout: bytes | None = None
-    stderr: bytes | None = None
-    exit_code: int | None = None
-    description: str | None = None
-    skip: bool = False
-    timeout: int | None = None
+class BaseTest:
+    group: TestGroup
+    stdout: bytes | None
+    stderr: bytes | None
+    exit_code: int | None
+    description: str | None
+    skip: bool
+    timeout: int | None
+
+    def __post_init__(self):
+        # inherit values from group if not set
+        self.stdout = self.stdout or self.group.stdout
+        self.stderr = self.stderr or self.group.stderr
+        self.exit_code = self.exit_code or self.group.exit_code
+        self.timeout = self.timeout or self.group.timeout
 
 
 @dataclass(kw_only=True)
-class TestGroup(Test):
+class Test(BaseTest):
+    """
+    A single test in the suite.
+    """
+
+    stdin: bytes
+
+
+@dataclass(kw_only=True)
+class TestGroup(BaseTest):
     """
     A group of tests.
     """
+
     name: str
-    path: Path | None = Path(".")
-    program: str | None = None
-    args: list[str] = field(default_factory=list)
-    init: str | None = None
-    teardown: str | None = None
-    group_timeout: int | None = None
-    test_timeout: int | None = None
+    group: TestGroup | None
+    path: Path
+    program: str
+    args: list[str]
+    init: str | None
+    teardown: str | None
+    group_timeout: int | None
+    timeout: int | None
     tests: list[Test] = field(default_factory=list)
     groups: list[TestGroup] = field(default_factory=list)
+
+    def __post_init__(self):
+        super().__post_init__()
+        # inherit values from parent groups
+        if self.group:
+            self.path = self.path or self.group.path
+            self.program = self.program or self.group.program
+            # None values for init, teardown and group_teardown are to be kept, not inherited
 
 
 class Config:
@@ -65,32 +88,39 @@ class Config:
         self.args = content.pop("args", [])
         self.groups = [self._read_test_group(x, y) for x, y in content.items()]
 
-    def _read_test_group(self, name: str, group: dict[str, Any]) -> TestGroup:
+    def _read_test_group(
+        self, name: str, group: dict[str, Any], parent_group: TestGroup | None = None
+    ) -> TestGroup:
         if "pwd" in group:
             path = Path(group["pwd"])
         else:
-            path = None
+            path = Path(".")
 
-        return TestGroup(
+        test_group = TestGroup(
             name=name,
+            group=parent_group,
             path=path,
             program=group.get("program", None),
             args=group.get("args", None),
             init=group.get("init", None),
             teardown=group.get("teardown", None),
             group_timeout=group.get("group-timeout", None),
-            test_timeout=group.get("test-timeout", None),
-            description=group.get("description", None),
-            skip=group.get("skip", False),
+            timeout=group.get("test-timeout", None),
             stdout=group.get("out", None),
             stderr=group.get("err", None),
             exit_code=group.get("exit-code", None),
-            tests=[self._read_test(x) for x in group["tests"]],
-            groups=[self._read_test_group(x, y) for x, y in group.get("groups", {}).items()],
+            description=group.get("description", None),
+            skip=group.get("skip", False),
         )
+        test_group.tests = [self._read_test(test_group, x) for x in group["tests"]]
+        test_group.groups = [
+            self._read_test_group(x, y, test_group) for x, y in group.get("groups", {}).items()
+        ]
+        return test_group
 
-    def _read_test(self, test: dict[str, Any]) -> Test:
+    def _read_test(self, group: TestGroup, test: dict[str, Any]) -> Test:
         return Test(
+            group=group,
             stdin=test["in"],
             stdout=test.get("out", None),
             stderr=test.get("err", None),
@@ -99,4 +129,3 @@ class Config:
             skip=test.get("skip", False),
             timeout=test.get("timeout", None),
         )
-
