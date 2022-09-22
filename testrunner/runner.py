@@ -53,4 +53,3 @@ class GroupRunner:
             raise StdoutMismatch(stdout, expected_stdout)
         if expected_stderr and stderr != expected_stderr:
             raise StderrMismatch(stderr, expected_stderr)
-

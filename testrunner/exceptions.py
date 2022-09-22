@@ -2,6 +2,7 @@ class TestException(Exception):
     """
     Base class for test exceptions.
     """
+
     ...
 
 
@@ -9,6 +10,7 @@ class TestFailure(TestException):
     """
     Program returned non-zero exit code when no specific exit code was expected.
     """
+
     def __init__(self, exit_code: int):
         super().__init__(f"Got exit code {exit_code} when running test")
 
@@ -26,4 +28,3 @@ class StderrMismatch(TestException):
 class ExitCodeMismatch(TestException):
     def __init__(self, output: int, expected: int):
         super().__init__(f"exit code mismatch: expected {expected}, got {output}")
-
