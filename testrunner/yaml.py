@@ -22,6 +22,7 @@ class Test:
     exit_code: int | None = None
     description: str | None = None
     skip: bool = False
+    timeout: int | None = None
 
 
 @dataclass(kw_only=True)
@@ -32,8 +33,11 @@ class TestGroup(Test):
     name: str
     path: Path | None = Path(".")
     program: str | None = None
-    teardown: str | None = None
     args: list[str] = field(default_factory=list)
+    init: str | None = None
+    teardown: str | None = None
+    group_timeout: int | None = None
+    test_timeout: int | None = None
     tests: list[Test] = field(default_factory=list)
     groups: list[TestGroup] = field(default_factory=list)
 
@@ -72,6 +76,10 @@ class Config:
             path=path,
             program=group.get("program", None),
             args=group.get("args", None),
+            init=group.get("init", None),
+            teardown=group.get("teardown", None),
+            group_timeout=group.get("group-timeout", None),
+            test_timeout=group.get("test-timeout", None),
             description=group.get("description", None),
             skip=group.get("skip", False),
             stdout=group.get("out", None),
@@ -89,5 +97,6 @@ class Config:
             exit_code=test.get("exit-code", None),
             description=test.get("description", None),
             skip=test.get("skip", False),
+            timeout=test.get("timeout", None),
         )
 
