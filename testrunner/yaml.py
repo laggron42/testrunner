@@ -13,7 +13,7 @@ log = logging.getLogger("testrunner.yaml")
 
 @dataclass(kw_only=True)
 class BaseTest:
-    group: TestGroup
+    group: TestGroup | None
     stdout: bytes | None
     stderr: bytes | None
     exit_code: int | None
@@ -23,10 +23,11 @@ class BaseTest:
 
     def __post_init__(self):
         # inherit values from group if not set
-        self.stdout = self.stdout or self.group.stdout
-        self.stderr = self.stderr or self.group.stderr
-        self.exit_code = self.exit_code or self.group.exit_code
-        self.timeout = self.timeout or self.group.timeout
+        if self.group and not isinstance(self.group, Config):
+            self.stdout = self.stdout or self.group.stdout
+            self.stderr = self.stderr or self.group.stderr
+            self.exit_code = self.exit_code or self.group.exit_code
+            self.timeout = self.timeout or self.group.timeout
 
 
 @dataclass(kw_only=True)
@@ -45,7 +46,7 @@ class TestGroup(BaseTest):
     """
 
     name: str
-    group: TestGroup | None
+    group: TestGroup | Config
     path: Path
     program: str
     args: list[str]
@@ -57,17 +58,17 @@ class TestGroup(BaseTest):
     groups: list[TestGroup] = field(default_factory=list)
 
     def __post_init__(self):
-        super().__post_init__()
+        if not isinstance(self.group, Config):
+            super().__post_init__()
         # inherit values from parent groups
-        if self.group:
-            self.path = self.path or self.group.path
-            self.program = self.program or self.group.program
-            # None values for init, teardown and group_teardown are to be kept, not inherited
+        self.path = self.path or self.group.path
+        self.program = self.program or self.group.program
+        # None values for init, teardown and group_teardown are to be kept, not inherited
 
 
 class Config:
     name: str
-    pwd: Path
+    path: Path
     program: str
     teardown: str | None
     args: list[str]
@@ -81,15 +82,18 @@ class Config:
             log.error("Failed to load YAML file", exc_info=True)
             sys.exit(1)
 
-        self.name = content["name"]
-        self.pwd = Path(content.pop("pwd", "."))
-        self.program = content["program"]
-        self.teardown = content.pop("teardown", None)
+        self.name = content.pop("name")
+        self.path = Path(content.pop("pwd", "."))
+        self.program = content.pop("program")
         self.args = content.pop("args", [])
-        self.groups = [self._read_test_group(x, y) for x, y in content.items()]
+        self.init = content.pop("init", None)
+        self.teardown = content.pop("teardown", None)
+        self.group_timeout = content.pop("group-timeout", None)
+        self.test_timeout = content.pop("test-timeout", None)
+        self.groups = [self._read_test_group(x, y, self) for x, y in content["groups"].items()]
 
     def _read_test_group(
-        self, name: str, group: dict[str, Any], parent_group: TestGroup | None = None
+        self, name: str, group: dict[str, Any], parent_group: TestGroup | Config
     ) -> TestGroup:
         if "pwd" in group:
             path = Path(group["pwd"])
@@ -101,7 +105,7 @@ class Config:
             group=parent_group,
             path=path,
             program=group.get("program", None),
-            args=group.get("args", None),
+            args=group.get("args", []),
             init=group.get("init", None),
             teardown=group.get("teardown", None),
             group_timeout=group.get("group-timeout", None),
@@ -121,7 +125,7 @@ class Config:
     def _read_test(self, group: TestGroup, test: dict[str, Any]) -> Test:
         return Test(
             group=group,
-            stdin=test["in"],
+            stdin=test.get("in", None),
             stdout=test.get("out", None),
             stderr=test.get("err", None),
             exit_code=test.get("exit-code", None),
