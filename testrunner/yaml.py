@@ -125,9 +125,9 @@ class Config:
     def _read_test(self, group: TestGroup, test: dict[str, Any]) -> Test:
         return Test(
             group=group,
-            stdin=test.get("in", None),
-            stdout=test.get("out", None),
-            stderr=test.get("err", None),
+            stdin=bytes(test.get("in", ""), encoding="utf-8"),
+            stdout=bytes(test.get("out", ""), encoding="utf-8"),
+            stderr=bytes(test.get("err", ""), encoding="utf-8"),
             exit_code=test.get("exit-code", None),
             description=test.get("description", None),
             skip=test.get("skip", False),

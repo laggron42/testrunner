@@ -5,7 +5,7 @@ from pathlib import Path
 
 from testrunner import __version__ as program_version
 from testrunner.yaml import Config
-from testrunner.runner import GroupRunner
+from testrunner.runner import Runner
 
 
 class CLIFlags(argparse.Namespace):
@@ -26,8 +26,8 @@ def main():
         sys.exit(0)
 
     config = Config(Path("tests.yml"))
-    runner = GroupRunner(config.groups[0])
-    print(list(runner._run_tests()))
+    runner = Runner(config)
+    runner.init()
 
 
 if __name__ == "__main__":
