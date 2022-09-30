@@ -14,8 +14,8 @@ log = logging.getLogger("testrunner.yaml")
 @dataclass(kw_only=True)
 class BaseTest:
     group: TestGroup | None
-    stdout: bytes | None
-    stderr: bytes | None
+    stdout: str | None
+    stderr: str | None
     exit_code: int | None
     description: str | None
     skip: bool
@@ -36,7 +36,7 @@ class Test(BaseTest):
     A single test in the suite.
     """
 
-    stdin: bytes
+    stdin: str
 
 
 @dataclass(kw_only=True)
@@ -125,9 +125,9 @@ class Config:
     def _read_test(self, group: TestGroup, test: dict[str, Any]) -> Test:
         return Test(
             group=group,
-            stdin=bytes(test.get("in", ""), encoding="utf-8"),
-            stdout=bytes(test.get("out", ""), encoding="utf-8"),
-            stderr=bytes(test.get("err", ""), encoding="utf-8"),
+            stdin=test.get("in", ""),
+            stdout=test.get("out", ""),
+            stderr=test.get("err", ""),
             exit_code=test.get("exit-code", None),
             description=test.get("description", None),
             skip=test.get("skip", False),

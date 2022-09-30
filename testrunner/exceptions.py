@@ -16,12 +16,12 @@ class TestFailure(TestException):
 
 
 class StdoutMismatch(TestException):
-    def __init__(self, output: bytes, expected: bytes):
+    def __init__(self, output: str, expected: str):
         super().__init__(f"stdout mismatch:\nOutput: {output}\nExpected: {expected}")
 
 
 class StderrMismatch(TestException):
-    def __init__(self, output: bytes, expected: bytes):
+    def __init__(self, output: str, expected: str):
         super().__init__(f"stderr mismatch:\nOutput: {output}\nExpected: {expected}")
 
 
