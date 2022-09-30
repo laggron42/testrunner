@@ -7,8 +7,12 @@ import time
 from enum import IntEnum
 from typing import Iterator
 from dataclasses import dataclass
-from rich import progress
 from concurrent.futures import ProcessPoolExecutor
+
+from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
+from rich.live import Live
+from rich.panel import Panel
+from rich.console import Group
 
 from testrunner.yaml import Config, Test, TestGroup
 from testrunner.exceptions import (
@@ -60,16 +64,15 @@ class GroupRunner:
         p = subprocess.Popen(
             [self.group.program] + self.group.args,
             cwd=self.group.path,
-            #stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
             shell=True,
         )
-        if test.stdin:
-            stdout, stderr = p.communicate(input=test.stdin, timeout=test.timeout)
-        else:
-            p.wait(timeout=test.timeout)
-            stdout = p.stdout
-            stderr = p.stderr
+        stdout, stderr = p.communicate(input=test.stdin + "\n", timeout=test.timeout)
+        stdout = stdout.strip("\n")
+        stderr = stderr.strip("\n")
 
         # exit code check
         if self.group.exit_code is None:
@@ -89,7 +92,6 @@ class GroupRunner:
     def _run_tests(self, progress: dict, task_id: int):
         total = len(self.group.tests)
         for i, test in enumerate(self.group.tests):
-            print(i)
             exc = None
             t1 = time.time()
             try:
@@ -118,47 +120,63 @@ class GroupRunner:
 class Runner:
     def __init__(self, config: Config):
         self.config = config
-        self.progress = progress.Progress(
-            progress.SpinnerColumn(),
-            progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            progress.BarColumn(),
-            progress.TextColumn("[progress.description]{task.description}"),
-            progress.TimeRemainingColumn(),
-            progress.TimeElapsedColumn(),
-        )
+        self.runners: list[GroupRunner] = []
 
     def init(self):
+        overall_progress = Progress(
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            BarColumn(),
+            TextColumn("[green]All jobs progresss"),
+        )
+        job_progress = Progress(
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[cyan]{task.completed}/{task.total} tests ran"),
+        )
+        progress_group = Group(job_progress, overall_progress)
+
         futures = []
-        self.progress.start()
-        with multiprocessing.Manager() as manager:
-            _progress = manager.dict()
-            overall_progress_task = self.progress.add_task("[green]All jobs progress:")
-            with ProcessPoolExecutor() as executor:
-                for group in self.config.groups:
-                    runner = GroupRunner(group)
-                    task_id = self.progress.add_task(f"Group {group.name}", visible=False)
-                    futures.append(
-                        executor.submit(runner._run_tests, _progress, task_id)  # type: ignore
-                    )
+        manager = multiprocessing.Manager()
+        _progress = manager.dict()
+
+        overall_progress_task = overall_progress.add_task("[green]All jobs progress:")
+
+        with ProcessPoolExecutor() as executor:
+            for group in self.config.groups:
+                runner = GroupRunner(group)
+                self.runners.append(runner)
+                task_id = job_progress.add_task(f"Group {group.name}", visible=True)
+                futures.append(
+                    executor.submit(runner._run_tests, _progress, task_id)  # type: ignore
+                )
+            with Live(progress_group):
                 while (n_finished := sum([future.done() for future in futures])) < len(
                     futures
                 ):
-                    self.progress.update(
+                    overall_progress.update(
                         overall_progress_task, completed=n_finished, total=len(futures)
                     )
                     for task_id, update_data in _progress.items():
                         latest = update_data["progress"]
                         total = update_data["total"]
                         # update the progress bar for this task:
-                        self.progress.update(
+                        job_progress.update(
                             task_id,
                             completed=latest,
                             total=total,
-                            visible=latest < total,
                         )
 
-                self.progress.stop()
-                # raise any errors:
-                for future in futures:
-                    future.result()
+            overall_progress.update(
+                overall_progress_task, completed=n_finished, total=len(futures)
+            )
+            overall_progress.stop()
+            # raise any errors:
+            for future in futures:
+                future.result()
+
+        manager.shutdown()
 
