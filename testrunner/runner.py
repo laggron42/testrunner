@@ -14,6 +14,7 @@ from rich.live import Live
 from rich.console import Group
 
 from testrunner.yaml import Config, Test, TestGroup
+from testrunner.progress import TestBarColumn
 from testrunner.exceptions import (
     TestException,
     TestFailure,
@@ -139,7 +140,7 @@ class Runner:
             TimeElapsedColumn(),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
+            TestBarColumn(),
             TextColumn(
                 "[cyan]{task.completed}/{task.total} tests ran "
                 "[orange1]({task.fields[failed]} failed)"
