@@ -11,7 +11,6 @@ from concurrent.futures import ProcessPoolExecutor
 
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
 from rich.live import Live
-from rich.panel import Panel
 from rich.console import Group
 
 from testrunner.yaml import Config, Test, TestGroup
@@ -154,9 +153,7 @@ class Runner:
                     executor.submit(runner._run_tests, _progress, task_id)  # type: ignore
                 )
             with Live(progress_group):
-                while (n_finished := sum([future.done() for future in futures])) < len(
-                    futures
-                ):
+                while (n_finished := sum([future.done() for future in futures])) < len(futures):
                     overall_progress.update(
                         overall_progress_task, completed=n_finished, total=len(futures)
                     )
@@ -179,4 +176,3 @@ class Runner:
                 future.result()
 
         manager.shutdown()
-
