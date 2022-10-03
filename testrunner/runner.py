@@ -90,6 +90,7 @@ class GroupRunner:
 
     def _run_tests(self, progress: dict, task_id: int):
         total = len(self.group.tests)
+        failed = 0
         for i, test in enumerate(self.group.tests):
             exc = None
             t1 = time.time()
@@ -111,9 +112,13 @@ class GroupRunner:
                 status = TestStatus.TIMED_OUT
             else:
                 status = TestStatus.SUCCESS
+
+            if status != TestStatus.SUCCESS:
+                failed += 1
+
             t2 = time.time()
             self.results.append(TestResult(test, status, exc, t2 - t1))
-            progress[task_id] = {"progress": i + 1, "total": total}
+            progress[task_id] = {"progress": i + 1, "failed": failed, "total": total}
 
 
 class Runner:
@@ -125,7 +130,8 @@ class Runner:
         overall_progress = Progress(
             SpinnerColumn(),
             TimeElapsedColumn(),
-            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            BarColumn(49),
             TextColumn("[green]All jobs progresss"),
         )
         job_progress = Progress(
@@ -134,7 +140,10 @@ class Runner:
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
-            TextColumn("[cyan]{task.completed}/{task.total} tests ran"),
+            TextColumn(
+                "[cyan]{task.completed}/{task.total} tests ran "
+                "[orange1]({task.fields[failed]} failed)"
+            ),
         )
         progress_group = Group(job_progress, overall_progress)
 
@@ -148,7 +157,7 @@ class Runner:
             for group in self.config.groups:
                 runner = GroupRunner(group)
                 self.runners.append(runner)
-                task_id = job_progress.add_task(f"Group {group.name}", visible=True)
+                task_id = job_progress.add_task(f"Group {group.name}", visible=True, failed=0)
                 futures.append(
                     executor.submit(runner._run_tests, _progress, task_id)  # type: ignore
                 )
@@ -159,17 +168,21 @@ class Runner:
                     )
                     for task_id, update_data in _progress.items():
                         latest = update_data["progress"]
+                        failed = update_data["failed"]
                         total = update_data["total"]
                         # update the progress bar for this task:
                         job_progress.update(
                             task_id,
                             completed=latest,
+                            failed=failed,
                             total=total,
                         )
 
-            overall_progress.update(
-                overall_progress_task, completed=n_finished, total=len(futures)
-            )
+                # final update
+                overall_progress.update(
+                    overall_progress_task, completed=n_finished, total=len(futures)
+                )
+
             overall_progress.stop()
             # raise any errors:
             for future in futures:
